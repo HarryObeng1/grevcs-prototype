@@ -356,3 +356,20 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
   body { background: #fff; }
 }
 @media (max-width: 760px) { .hide-sm { display: none; } }
+.header-nav { flex-wrap: nowrap; }
+.header-nav a, .role-chip button, .brand-sub { white-space: nowrap; }
+.role-chip .who { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.role-chip .who small { overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 1300px) { .header-nav a:nth-child(n+4) { display: none; } }
+@media (max-width: 1120px) { .header-nav { display: none; } }
+@media (max-width: 640px) {
+  .header-inner { padding: 0 12px; gap: 8px; }
+  .brand-sub { display: none; }
+  .role-chip { padding: 3px; gap: 4px; }
+  .role-chip button { padding: 5px 9px; font-size: 12px; }
+  .main, .page, .page-narrow { max-width: 100vw; }
+  .card { min-width: 0; }
+  .page-head h1 { font-size: 23px; }
+}
+html, body { overflow-x: hidden; }
+.shell > * { min-width: 0; }

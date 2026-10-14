@@ -151,10 +151,10 @@ export function HBars({ rows, format = (n: number) => n.toLocaleString(), color 
   );
 }
 
-export function Columns({ rows, format = (n: number) => n.toLocaleString(), height = 180, highlightLast }: { rows: { label: string; value: number }[]; format?: (n: number) => string; height?: number; highlightLast?: boolean }) {
+export function Columns({ rows, format = (n: number) => n.toLocaleString(), height = 180, highlightLast, width = 640 }: { rows: { label: string; value: number }[]; format?: (n: number) => string; height?: number; highlightLast?: boolean; width?: number }) {
   const [hover, setHover] = useState<number | null>(null);
   const max = Math.max(1, ...rows.map((r) => r.value));
-  const W = 640, H = height, padB = 22, padT = 18;
+  const W = width, H = height, padB = 22, padT = 18;
   const bw = W / rows.length;
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: "block" }} role="img" aria-label="Column chart">

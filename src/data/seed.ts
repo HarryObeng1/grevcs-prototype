@@ -7,7 +7,7 @@ import {
   BANKS, COMPANY_STEMS, FIRST_NAMES, INSURERS, MOMO, OFFICERS, PROPERTY_TYPES, REGIONS, STREETS, SURNAMES,
 } from "./ref";
 
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 const COLORS = ["#0b5d46", "#1d4f91", "#8a5a00", "#a3231b", "#5b3a96", "#137356", "#2d6a8a", "#7a4b1e", "#3d5a2a", "#6b2f5a"];
 
@@ -288,19 +288,21 @@ export function buildSeed(): DB {
   const licOf = (id: string) => licences.find((l) => l.actorId === id)!;
 
   // ---------- Properties ----------
-  for (let i = 0; i < 520; i++) {
-    const reg = pickRegion();
+  const newProperty = (regionName?: string): Property => {
+    const reg = regionName ? REGIONS.find((x) => x.name === regionName)! : pickRegion();
     const district = r.pick(reg.districts);
-    properties.push({
-      id: `PRP-${String(i + 1).padStart(5, "0")}`,
+    const prop: Property = {
+      id: `PRP-${String(properties.length + 1).padStart(5, "0")}`,
       digitalAddress: gps(reg.code),
       landsRef: `LC/${reg.code}/${r.int(2008, 2025)}/${r.int(1000, 99999)}`,
       type: r.pick(PROPERTY_TYPES),
       region: reg.name,
       district,
       description: `${r.int(1, 120)} ${r.pick(STREETS)}, ${district}`,
-    });
-  }
+    };
+    properties.push(prop);
+    return prop;
+  };
 
   // ---------- Transactions ----------
   let txnSeq = 0, rctSeq = 0;
@@ -356,7 +358,7 @@ export function buildSeed(): DB {
     if (start >= end) continue;
     const t = r.pick(typesFor(a));
     const d = date(start, end);
-    const prop = r.pick(properties.filter((p) => p.region === a.region).slice(0, 80)) ?? r.pick(properties);
+    const prop = newProperty(a.region);
     const method: PayMethod = r.weighted(["momo", "bank", "card", "ghipss"], [38, 42, 6, 14]);
     txnSeq++;
     const id = `TXN-${d.slice(2, 4)}-${String(txnSeq).padStart(6, "0")}`;
@@ -397,7 +399,7 @@ export function buildSeed(): DB {
     txnSeq++;
     const tx: Transaction = {
       id: `TXN-26-${String(txnSeq).padStart(6, "0")}`, actorId: s6.id, type: "deposit", value: 48500 + k * 350, date: d, method: "momo",
-      propertyId: properties[k + 3].id, counterparty: { name: person(), nationality: "Ghanaian", ghanaCard: ghanaCard(), isCompany: false, pep: false, cddDone: true },
+      propertyId: newProperty("Greater Accra").id, counterparty: { name: person(), nationality: "Ghanaian", ghanaCard: ghanaCard(), isCompany: false, pep: false, cddDone: true },
       payerIsThirdParty: true, reacForm: `REAC-F7-${r.int(100000, 999999)}`, status: "flagged",
     };
     transactions.unshift(tx);
@@ -410,7 +412,7 @@ export function buildSeed(): DB {
     txnSeq++;
     const tx: Transaction = {
       id: `TXN-26-${String(txnSeq).padStart(6, "0")}`, actorId: s2.id, type: "rental", value: 36000 + k * 6000, date: d, method: "cash",
-      propertyId: properties[20 + k].id, counterparty: { name: person(), nationality: "Ghanaian", ghanaCard: ghanaCard(), isCompany: false, pep: false, cddDone: false },
+      propertyId: newProperty("Greater Accra").id, counterparty: { name: person(), nationality: "Ghanaian", ghanaCard: ghanaCard(), isCompany: false, pep: false, cddDone: false },
       payerIsThirdParty: false, reacForm: "—", status: "flagged",
     };
     transactions.unshift(tx);
@@ -424,6 +426,25 @@ export function buildSeed(): DB {
     foreignSale.status = "flagged";
     addAlert(foreignSale.actorId, "Foreign ownership limit", "99-year leasehold to a company 65% foreign-owned exceeds the 50-year limit (Act 1036).", 64, foreignSale.date, "open", foreignSale.id);
   }
+  // deliberate double sales (title conflicts) for the Lands Commission view
+  const dupSale = (actorId: string, d1: string, d2: string, value: number) => {
+    const prop = newProperty("Greater Accra");
+    prop.type = "Serviced plot (100x70)";
+    [d1, d2].forEach((d) => {
+      txnSeq++;
+      transactions.push({
+        id: `TXN-${d.slice(2, 4)}-${String(txnSeq).padStart(6, "0")}`, actorId, type: "sale", value, date: d, method: "bank", propertyId: prop.id,
+        counterparty: { name: person(), nationality: r.chance(0.5) ? "British (diaspora)" : "Ghanaian", ghanaCard: ghanaCard(), isCompany: false, pep: false, cddDone: true },
+        payerIsThirdParty: false, reacForm: `REAC-F3-${r.int(100000, 999999)}`, leaseYears: 99, spousalConsent: null, status: "recorded",
+      });
+    });
+  };
+  dupSale(s3.id, "2024-11-04", "2025-12-09", 420000);
+  dupSale(s3.id, "2025-03-18", "2026-01-22", 385000);
+  const devs = actors.filter((a) => a.type === "developer" && licOf(a.id).status === "active" && a.id !== dev.id);
+  dupSale(devs[3].id, "2026-02-10", "2026-08-27", 610000);
+  transactions.sort((x, y) => (x.date < y.date ? 1 : -1));
+
   // misc open alerts
   const others = actors.filter((a) => a.type !== "sub_agent" && a.id !== sankofa.id).slice(8);
   const misc: [string, string, number][] = [
