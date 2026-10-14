@@ -4,7 +4,7 @@
   "private": true,
   "description": "GREVCS - Ghana Real Estate Verification and Compliance System (prototype)",
   "scripts": {
-    "build": "bun build src/main.tsx --outdir dist/assets --minify --target browser --entry-naming app.js && cp public/* dist/ && cp src/styles.css dist/assets/app.css",
+    "build": "./build.sh",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": { "react": "19.2.8", "react-dom": "19.2.8" }

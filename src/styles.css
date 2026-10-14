@@ -355,3 +355,4 @@ table.table { width: 100%; border-collapse: collapse; font-size: 14px; }
   .shell { display: block; }
   body { background: #fff; }
 }
+@media (max-width: 760px) { .hide-sm { display: none; } }
